@@ -980,6 +980,12 @@
             const libgenSearch = result.title ? `${CONFIG.libgenMirrors[0]}/scimag/?q=${encodeURIComponent(result.title)}` : '';
             const scholarUrl = result.title ? `${CONFIG.googleScholar}?q=${encodeURIComponent(result.title)}` : '';
 
+            // 新增：更多下载源
+            const arxivSearch = result.title ? `https://arxiv.org/search/?query=${encodeURIComponent(result.title)}&searchtype=all` : '';
+            const pubmedSearch = result.title ? `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(result.title)}` : '';
+            const researchgateSearch = result.title ? `https://www.researchgate.net/search/publication?q=${encodeURIComponent(result.title)}` : '';
+            const semanticScholarSearch = result.title ? `https://www.semanticscholar.org/search?q=${encodeURIComponent(result.title)}` : '';
+
             return `
         <article class="result-card" style="animation-delay: ${index * 0.05}s">
             <h4 class="result-title"><a href="${result.url || doiUrl}" target="_blank" rel="noopener">${escapeHtml(result.title)}</a></h4>
@@ -996,9 +1002,20 @@
                 <div class="dropdown">
                     <button class="action-btn primary" onclick="toggleDropdown(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 PDF ▼</button>
                     <div class="dropdown-menu">
-                        <div class="dropdown-section"><div class="dropdown-label">🔓 开放获取</div><a href="javascript:void(0)" onclick="checkUnpaywall('${result.doi}')" class="dropdown-item">检查 Unpaywall</a></div>
-                        <div class="dropdown-section"><div class="dropdown-label">📚 Sci-Hub 镜像</div>${scihubLinks}</div>
-                        <div class="dropdown-section"><div class="dropdown-label">📖 LibGen</div><a href="${libgenSearch}" target="_blank" rel="noopener" class="dropdown-item">在 LibGen 搜索</a><a href="${CONFIG.libgenMirrors[1]}/scimag/?q=${encodeURIComponent(result.title || '')}" target="_blank" rel="noopener" class="dropdown-item">LibGen 镜像 2</a></div>
+                        <div class="dropdown-section"><div class="dropdown-label">🔓 开放获取（推荐新文献）</div>
+                            <a href="javascript:void(0)" onclick="checkUnpaywall('${result.doi}')" class="dropdown-item">✅ Unpaywall 检查</a>
+                            <a href="${pubmedSearch}" target="_blank" rel="noopener" class="dropdown-item">🏥 PubMed Central</a>
+                            <a href="${arxivSearch}" target="_blank" rel="noopener" class="dropdown-item">📄 arXiv 预印本</a>
+                        </div>
+                        <div class="dropdown-section"><div class="dropdown-label">🔬 学术社交网络</div>
+                            <a href="${researchgateSearch}" target="_blank" rel="noopener" class="dropdown-item">ResearchGate</a>
+                            <a href="${semanticScholarSearch}" target="_blank" rel="noopener" class="dropdown-item">Semantic Scholar</a>
+                        </div>
+                        <div class="dropdown-section"><div class="dropdown-label">📚 Sci-Hub（旧文献）</div>${scihubLinks}</div>
+                        <div class="dropdown-section"><div class="dropdown-label">📖 LibGen</div>
+                            <a href="${libgenSearch}" target="_blank" rel="noopener" class="dropdown-item">LibGen 搜索</a>
+                            <a href="${CONFIG.libgenMirrors[1]}/scimag/?q=${encodeURIComponent(result.title || '')}" target="_blank" rel="noopener" class="dropdown-item">LibGen 镜像 2</a>
+                        </div>
                     </div>
                 </div>` : ''}
                 <button class="action-btn" onclick="copyDOI('${result.doi}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制引用</button>
