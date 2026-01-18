@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学术文献检索工具 | Literature Finder</title>
+    <meta name="description" content="快速检索和下载学术文献的在线工具">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== CSS Variables & Design Tokens ===== */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --primary-color: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary-color: #764ba2;
+            --bg-primary: #0f0f23;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #16213e;
+            --bg-card: rgba(26, 26, 46, 0.8);
+            --bg-card-hover: rgba(26, 26, 46, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #a0aec0;
+            --text-muted: #718096;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-hover: rgba(102, 126, 234, 0.5);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.3);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-full: 9999px;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(79, 172, 254, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .app-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: var(--spacing-xl);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: var(--spacing-2xl) 0;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--primary-color);
+            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+        }
+
+        .logo h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xl);
+        }
+
+        .search-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow-lg);
+            animation: fadeInUp 0.6s ease 0.1s both;
+        }
+
+        .search-header {
+            text-align: center;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .search-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .search-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .input-group {
+            display: flex;
+            gap: var(--spacing-md);
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: var(--spacing-lg);
+            width: 20px;
+            height: 20px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem;
+            font-size: 1rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--bg-tertiary);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            outline: none;
+            transition: all var(--transition-normal);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: var(--spacing-md);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            cursor: pointer;
+            opacity: 0;
+            transition: all var(--transition-fast);
+        }
+
+        .clear-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .search-input:not(:placeholder-shown)~.clear-btn {
+            opacity: 1;
+        }
+
+        .clear-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: white;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            white-space: nowrap;
+        }
+
+        .search-btn svg {
+            width: 20px;
+            height: 20px;
+            transition: transform var(--transition-fast);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .search-btn:hover svg {
+            transform: translateX(4px);
+        }
+
+        .search-options {
+            display: flex;
+            gap: var(--spacing-md);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            cursor: pointer;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            transition: all var(--transition-fast);
+        }
+
+        .option-label input {
+            display: none;
+        }
+
+        .option-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            transition: color var(--transition-fast);
+        }
+
+        .option-label:hover .option-text {
+            color: var(--text-primary);
+        }
+
+        .option-label input:checked+.option-text {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .option-label:has(input:checked) {
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .examples {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .examples-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .example-btn {
+            padding: var(--spacing-xs) var(--spacing-md);
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: var(--text-secondary);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .example-btn:hover {
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .loading-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-lg);
+            padding: var(--spacing-2xl);
+        }
+
+        .loader {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loader-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid transparent;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1.2s linear infinite;
+        }
+
+        .loader-ring:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-top-color: var(--secondary-color);
+            animation-duration: 1s;
+            animation-direction: reverse;
+        }
+
+        .loader-ring:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            border-top-color: #4facfe;
+            animation-duration: 0.8s;
+        }
+
+        .loading-state p {
+            color: var(--text-secondary);
+        }
+
+        .results-section {
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .results-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .results-count {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background: var(--glass-bg);
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-full);
+        }
+
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-normal);
+            animation: fadeInUp 0.4s ease backwards;
+        }
+
+        .result-card:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.4;
+        }
+
+        .result-title a {
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+
+        .result-title a:hover {
+            color: var(--primary-color);
+        }
+
+        .result-authors {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .result-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .meta-item svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .result-abstract {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-md);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.85rem;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--text-primary);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+        }
+
+        .action-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .action-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .action-btn.primary {
+            background: var(--primary-gradient);
+            border-color: transparent;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            min-width: 220px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all var(--transition-fast);
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-section {
+            padding: var(--spacing-sm) 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .dropdown-section:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-label {
+            padding: var(--spacing-xs) var(--spacing-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(102, 126, 234, 0.15);
+            color: var(--primary-color);
+        }
+
+        .error-state,
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-2xl);
+            text-align: center;
+        }
+
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            color: #f5576c;
+        }
+
+        .error-state p,
+        .empty-state p {
+            color: var(--text-secondary);
+        }
+
+        .empty-illustration svg {
+            width: 200px;
+            height: 160px;
+            opacity: 0.8;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            padding: var(--spacing-xl) 0;
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            color: var(--text-primary);
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                padding: var(--spacing-md);
+            }
+
+            .logo h1 {
+                font-size: 2rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .search-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .result-actions {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .dropdown-menu {
+                left: 0;
+                right: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    <line x1="12" y1="6" x2="16" y2="6"></line>
+                    <line x1="12" y1="10" x2="16" y2="10"></line>
+                </svg>
+                <h1>Literature Finder</h1>
+            </div>
+            <p class="tagline">学术文献检索与下载工具</p>
+        </header>
+
+        <main class="main-content">
+            <div class="search-card">
+                <div class="search-header">
+                    <h2>检索文献</h2>
+                    <p>输入文献标题、DOI、作者或参考格式进行搜索</p>
+                </div>
+
+                <div class="search-form">
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                            <input type="text" id="searchInput" class="search-input"
+                                placeholder="例如: 10.1038/nature12373 或 文献标题..." autocomplete="off">
+                            <button id="clearBtn" class="clear-btn" title="清除">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <button id="searchBtn" class="search-btn">
+                            <span>搜索</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="search-options">
+                        <label class="option-label"><input type="radio" name="searchType" value="all" checked><span
+                                class="option-text">全部</span></label>
+                        <label class="option-label"><input type="radio" name="searchType" value="doi"><span
+                                class="option-text">DOI</span></label>
+                        <label class="option-label"><input type="radio" name="searchType" value="title"><span
+                                class="option-text">标题</span></label>
+                        <label class="option-label"><input type="radio" name="searchType" value="author"><span
+                                class="option-text">作者</span></label>
+                    </div>
+                </div>
+
+                <div class="examples">
+                    <span class="examples-label">示例：</span>
+                    <button class="example-btn" data-query="10.1038/nature12373">DOI示例</button>
+                    <button class="example-btn" data-query="machine learning neural network">关键词搜索</button>
+                    <button class="example-btn" data-query="Hinton, Geoffrey">作者搜索</button>
+                </div>
+            </div>
+
+            <div id="loadingState" class="loading-state hidden">
+                <div class="loader">
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                </div>
+                <p>正在检索文献...</p>
+            </div>
+
+            <div id="resultsSection" class="results-section hidden">
+                <div class="results-header">
+                    <h3>检索结果</h3>
+                    <span id="resultsCount" class="results-count"></span>
+                </div>
+                <div id="resultsContainer" class="results-container"></div>
+            </div>
+
+            <div id="errorState" class="error-state hidden">
+                <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <p id="errorMessage">检索失败，请稍后重试</p>
+            </div>
+
+            <div id="emptyState" class="empty-state">
+                <div class="empty-illustration">
+                    <svg viewBox="0 0 200 160" fill="none">
+                        <rect x="40" y="30" width="120" height="100" rx="8" fill="url(#gradient1)" opacity="0.1" />
+                        <rect x="50" y="45" width="100" height="8" rx="4" fill="url(#gradient1)" opacity="0.3" />
+                        <rect x="50" y="60" width="80" height="6" rx="3" fill="url(#gradient1)" opacity="0.2" />
+                        <rect x="50" y="72" width="90" height="6" rx="3" fill="url(#gradient1)" opacity="0.2" />
+                        <circle cx="100" cy="115" r="15" fill="url(#gradient1)" opacity="0.2" />
+                        <defs>
+                            <linearGradient id="gradient1" x1="0" y1="0" x2="200" y2="160">
+                                <stop offset="0%" stop-color="#667eea" />
+                                <stop offset="100%" stop-color="#764ba2" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h3>开始检索学术文献</h3>
+                <p>支持 DOI、文献标题、作者名称等多种检索方式</p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>数据来源：<a href="https://www.crossref.org/" target="_blank">CrossRef</a> · <a
+                    href="https://www.semanticscholar.org/" target="_blank">Semantic Scholar</a></p>
+            <p class="disclaimer">本工具仅供学术研究使用，请遵守相关版权规定</p>
+        </footer>
+    </div>
+
+    <script>
+        const CONFIG = {
+            crossrefAPI: 'https://api.crossref.org/works',
+            unpayWallAPI: 'https://api.unpaywall.org/v2',
+            scihubMirrors: ['https://sci-hub.se', 'https://sci-hub.st', 'https://sci-hub.ru', 'https://sci-hub.ren', 'https://sci-hub.ee', 'https://sci-hub.wf'],
+            libgenMirrors: ['https://libgen.rs', 'https://libgen.is', 'https://libgen.st'],
+            googleScholar: 'https://scholar.google.com/scholar',
+            resultsPerPage: 10,
+            requestTimeout: 15000,
+            unpayWallEmail: 'literature-finder@example.com'
+        };
+
+        const elements = {
+            searchInput: document.getElementById('searchInput'),
+            searchBtn: document.getElementById('searchBtn'),
+            clearBtn: document.getElementById('clearBtn'),
+            loadingState: document.getElementById('loadingState'),
+            resultsSection: document.getElementById('resultsSection'),
+            resultsContainer: document.getElementById('resultsContainer'),
+            resultsCount: document.getElementById('resultsCount'),
+            errorState: document.getElementById('errorState'),
+            errorMessage: document.getElementById('errorMessage'),
+            emptyState: document.getElementById('emptyState'),
+            searchTypeRadios: document.querySelectorAll('input[name="searchType"]'),
+            exampleBtns: document.querySelectorAll('.example-btn')
+        };
+
+        let currentSearchType = 'all';
+
+        function initEventListeners() {
+            elements.searchBtn.addEventListener('click', handleSearch);
+            elements.searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSearch(); });
+            elements.clearBtn.addEventListener('click', () => { elements.searchInput.value = ''; elements.searchInput.focus(); });
+            elements.searchTypeRadios.forEach(radio => { radio.addEventListener('change', (e) => { currentSearchType = e.target.value; }); });
+            elements.exampleBtns.forEach(btn => { btn.addEventListener('click', () => { elements.searchInput.value = btn.dataset.query; elements.searchInput.focus(); }); });
+        }
+
+        async function handleSearch() {
+            const query = elements.searchInput.value.trim();
+            if (!query) { showError('请输入检索内容'); return; }
+            showLoading();
+            try {
+                let results = isDOI(query) || currentSearchType === 'doi' ? await searchByDOI(query) : await searchByQuery(query, currentSearchType);
+                results && results.length > 0 ? showResults(results) : showError('未找到相关文献，请尝试其他关键词');
+            } catch (error) { console.error('Search error:', error); showError('检索失败: ' + (error.message || '网络错误，请稍后重试')); }
+        }
+
+        function isDOI(str) { return /^10\.\d{4,}\/[^\s]+$/i.test(str.trim()); }
+        function extractDOI(str) { const m = str.match(/10\.\d{4,}\/[^\s]+/i); return m ? m[0] : str; }
+
+        async function searchByDOI(doi) {
+            const cleanDOI = extractDOI(doi);
+            const response = await fetchWithTimeout(`${CONFIG.crossrefAPI}/${encodeURIComponent(cleanDOI)}`);
+            const data = await response.json();
+            return data.message ? [formatCrossRefResult(data.message)] : [];
+        }
+
+        async function searchByQuery(query, searchType) {
+            let url = `${CONFIG.crossrefAPI}?rows=${CONFIG.resultsPerPage}`;
+            if (searchType === 'title') url += `&query.title=${encodeURIComponent(query)}`;
+            else if (searchType === 'author') url += `&query.author=${encodeURIComponent(query)}`;
+            else url += `&query=${encodeURIComponent(query)}`;
+            const response = await fetchWithTimeout(url);
+            const data = await response.json();
+            return data.message?.items?.map(formatCrossRefResult) || [];
+        }
+
+        function formatCrossRefResult(item) {
+            return {
+                title: item.title?.[0] || 'Untitled',
+                authors: formatAuthors(item.author),
+                year: item.published?.['date-parts']?.[0]?.[0] || item.created?.['date-parts']?.[0]?.[0] || '',
+                journal: item['container-title']?.[0] || '',
+                doi: item.DOI || '',
+                url: item.URL || (item.DOI ? `https://doi.org/${item.DOI}` : ''),
+                abstract: item.abstract ? cleanAbstract(item.abstract) : '',
+                citations: item['is-referenced-by-count'] || 0
+            };
+        }
+
+        function formatAuthors(authors) {
+            if (!authors?.length) return 'Unknown authors';
+            const formatted = authors.slice(0, 5).map(a => a.family && a.given ? `${a.family}, ${a.given.charAt(0)}.` : a.name || a.family || 'Unknown');
+            if (authors.length > 5) formatted.push('et al.');
+            return formatted.join('; ');
+        }
+
+        function cleanAbstract(abstract) { return abstract.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').trim(); }
+
+        async function fetchWithTimeout(url, options = {}) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), CONFIG.requestTimeout);
+            try {
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                return response;
+            } finally { clearTimeout(timeout); }
+        }
+
+        function showLoading() { elements.emptyState.classList.add('hidden'); elements.errorState.classList.add('hidden'); elements.resultsSection.classList.add('hidden'); elements.loadingState.classList.remove('hidden'); }
+
+        function showResults(results) {
+            elements.loadingState.classList.add('hidden'); elements.emptyState.classList.add('hidden'); elements.errorState.classList.add('hidden');
+            elements.resultsCount.textContent = `找到 ${results.length} 条结果`;
+            elements.resultsContainer.innerHTML = results.map((r, i) => createResultCard(r, i)).join('');
+            elements.resultsSection.classList.remove('hidden');
+        }
+
+        function showError(message) { elements.loadingState.classList.add('hidden'); elements.emptyState.classList.add('hidden'); elements.resultsSection.classList.add('hidden'); elements.errorMessage.textContent = message; elements.errorState.classList.remove('hidden'); }
+
+        function createResultCard(result, index) {
+            const doiUrl = result.doi ? `https://doi.org/${result.doi}` : '';
+            const scihubLinks = result.doi ? CONFIG.scihubMirrors.map((m, i) => `<a href="${m}/${result.doi}" target="_blank" rel="noopener" class="dropdown-item">Sci-Hub 镜像 ${i + 1}</a>`).join('') : '';
+            const libgenSearch = result.title ? `${CONFIG.libgenMirrors[0]}/scimag/?q=${encodeURIComponent(result.title)}` : '';
+            const scholarUrl = result.title ? `${CONFIG.googleScholar}?q=${encodeURIComponent(result.title)}` : '';
+
+            return `
+        <article class="result-card" style="animation-delay: ${index * 0.05}s">
+            <h4 class="result-title"><a href="${result.url || doiUrl}" target="_blank" rel="noopener">${escapeHtml(result.title)}</a></h4>
+            <p class="result-authors">${escapeHtml(result.authors)}</p>
+            <div class="result-meta">
+                ${result.year ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${result.year}</span>` : ''}
+                ${result.journal ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${escapeHtml(truncate(result.journal, 50))}</span>` : ''}
+                ${result.citations > 0 ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${result.citations} 引用</span>` : ''}
+            </div>
+            ${result.abstract ? `<p class="result-abstract">${escapeHtml(result.abstract)}</p>` : ''}
+            <div class="result-actions">
+                ${doiUrl ? `<a href="${doiUrl}" target="_blank" rel="noopener" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>DOI原文</a>` : ''}
+                ${result.doi ? `
+                <div class="dropdown">
+                    <button class="action-btn primary" onclick="toggleDropdown(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 PDF ▼</button>
+                    <div class="dropdown-menu">
+                        <div class="dropdown-section"><div class="dropdown-label">🔓 开放获取</div><a href="javascript:void(0)" onclick="checkUnpaywall('${result.doi}')" class="dropdown-item">检查 Unpaywall</a></div>
+                        <div class="dropdown-section"><div class="dropdown-label">📚 Sci-Hub 镜像</div>${scihubLinks}</div>
+                        <div class="dropdown-section"><div class="dropdown-label">📖 LibGen</div><a href="${libgenSearch}" target="_blank" rel="noopener" class="dropdown-item">在 LibGen 搜索</a><a href="${CONFIG.libgenMirrors[1]}/scimag/?q=${encodeURIComponent(result.title || '')}" target="_blank" rel="noopener" class="dropdown-item">LibGen 镜像 2</a></div>
+                    </div>
+                </div>` : ''}
+                <button class="action-btn" onclick="copyDOI('${result.doi}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制引用</button>
+                <a href="${scholarUrl}" target="_blank" rel="noopener" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Google Scholar</a>
+            </div>
+        </article>`;
+        }
+
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function truncate(text, maxLength) { return !text || text.length <= maxLength ? text : text.substring(0, maxLength) + '...'; }
+
+        function copyDOI(doi) {
+            if (!doi) return;
+            const citation = `DOI: ${doi}\nURL: https://doi.org/${doi}`;
+            navigator.clipboard.writeText(citation).then(() => showToast('已复制到剪贴板')).catch(() => {
+                const t = document.createElement('textarea'); t.value = citation; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); showToast('已复制到剪贴板');
+            });
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;z-index:1000;animation:fadeInUp 0.3s ease;box-shadow:0 4px 20px rgba(0,0,0,0.3);';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
+        }
+
+        function toggleDropdown(btn) {
+            const menu = btn.nextElementSibling;
+            const isOpen = menu.classList.contains('show');
+            document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
+            if (!isOpen) menu.classList.add('show');
+        }
+
+        async function checkUnpaywall(doi) {
+            if (!doi) { showToast('无法获取 DOI'); return; }
+            showToast('正在检查开放获取版本...');
+            try {
+                const response = await fetchWithTimeout(`${CONFIG.unpayWallAPI}/${doi}?email=${CONFIG.unpayWallEmail}`);
+                const data = await response.json();
+                if (data.is_oa && data.best_oa_location?.url_for_pdf) { showToast('找到开放获取版本！'); window.open(data.best_oa_location.url_for_pdf, '_blank'); }
+                else if (data.is_oa && data.best_oa_location?.url) { showToast('找到开放获取页面！'); window.open(data.best_oa_location.url, '_blank'); }
+                else showToast('未找到开放获取版本，请尝试其他下载源');
+            } catch (e) { console.error(e); showToast('检查失败，请尝试其他下载源'); }
+        }
+
+        document.addEventListener('DOMContentLoaded', initEventListeners);
+        document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show')); });
+    </script>
+</body>
+
+</html>
