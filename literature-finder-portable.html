@@ -739,6 +739,70 @@
                 right: 0;
             }
         }
+
+        /* Quick Search Buttons */
+        .direct-search-section {
+            margin-top: var(--spacing-lg);
+            width: 100%;
+        }
+
+        .quick-search-buttons,
+        .platform-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            justify-content: center;
+            margin-top: var(--spacing-md);
+        }
+
+        .quick-search-btn,
+        .platform-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+        }
+
+        .quick-search-btn:hover,
+        .platform-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .search-all-btn {
+            display: block;
+            margin: var(--spacing-lg) auto 0;
+            padding: var(--spacing-md) var(--spacing-xl);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: white;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .search-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .quick-platforms {
+            margin-top: var(--spacing-lg);
+        }
     </style>
 </head>
 
@@ -834,6 +898,11 @@
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
                 <p id="errorMessage">检索失败，请稍后重试</p>
+                <div id="directSearchLinks" class="direct-search-section">
+                    <p style="margin-top: 1rem; color: var(--text-secondary);">💡 尝试直接在以下平台搜索：</p>
+                    <div class="quick-search-buttons" id="quickSearchButtons"></div>
+                    <button class="search-all-btn" onclick="searchAllPlatforms()">🚀 一键搜索所有平台</button>
+                </div>
             </div>
 
             <div id="emptyState" class="empty-state">
@@ -854,6 +923,17 @@
                 </div>
                 <h3>开始检索学术文献</h3>
                 <p>支持 DOI、文献标题、作者名称等多种检索方式</p>
+                <div class="quick-platforms">
+                    <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">或直接在平台搜索：</p>
+                    <div class="platform-buttons">
+                        <a href="https://scholar.google.com/" target="_blank" class="platform-btn">Google Scholar</a>
+                        <a href="https://www.researchgate.net/" target="_blank" class="platform-btn">ResearchGate</a>
+                        <a href="https://ieeexplore.ieee.org/" target="_blank" class="platform-btn">IEEE</a>
+                        <a href="https://www.mdpi.com/" target="_blank" class="platform-btn">MDPI</a>
+                        <a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank" class="platform-btn">PubMed</a>
+                        <a href="https://arxiv.org/" target="_blank" class="platform-btn">arXiv</a>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -1130,6 +1210,51 @@
                 else showToast('未找到开放获取版本，请尝试其他下载源');
             } catch (e) { console.error(e); showToast('检查失败，请尝试其他下载源'); }
         }
+
+        // 平台搜索配置
+        const PLATFORMS = [
+            { name: 'Google Scholar', icon: '📚', getUrl: q => `https://scholar.google.com/scholar?q=${encodeURIComponent(q)}` },
+            { name: 'ResearchGate', icon: '🔬', getUrl: q => `https://www.researchgate.net/search/publication?q=${encodeURIComponent(q)}` },
+            { name: 'IEEE Xplore', icon: '⚡', getUrl: q => `https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=${encodeURIComponent(q)}` },
+            { name: 'MDPI', icon: '📖', getUrl: q => `https://www.mdpi.com/search?q=${encodeURIComponent(q)}` },
+            { name: 'PubMed', icon: '🏥', getUrl: q => `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(q)}` },
+            { name: 'arXiv', icon: '📄', getUrl: q => `https://arxiv.org/search/?query=${encodeURIComponent(q)}&searchtype=all` },
+            { name: 'Semantic Scholar', icon: '🧠', getUrl: q => `https://www.semanticscholar.org/search?q=${encodeURIComponent(q)}` },
+            { name: 'SpringerLink', icon: '📗', getUrl: q => `https://link.springer.com/search?query=${encodeURIComponent(q)}` },
+            { name: 'ScienceDirect', icon: '🔵', getUrl: q => `https://www.sciencedirect.com/search?qs=${encodeURIComponent(q)}` },
+            { name: 'Wiley', icon: '📕', getUrl: q => `https://onlinelibrary.wiley.com/action/doSearch?AllField=${encodeURIComponent(q)}` }
+        ];
+
+        // 生成快速搜索按钮
+        function generateQuickSearchButtons(query) {
+            const container = document.getElementById('quickSearchButtons');
+            if (!container || !query) return;
+            container.innerHTML = PLATFORMS.map(p =>
+                `<a href="${p.getUrl(query)}" target="_blank" rel="noopener" class="quick-search-btn">${p.icon} ${p.name}</a>`
+            ).join('');
+        }
+
+        // 搜索所有平台
+        function searchAllPlatforms() {
+            const query = elements.searchInput.value.trim();
+            if (!query) { showToast('请先输入搜索内容'); return; }
+            showToast('正在打开多个搜索页面...');
+            // 只打开前5个以避免浏览器拦截
+            const topPlatforms = PLATFORMS.slice(0, 5);
+            topPlatforms.forEach((p, i) => {
+                setTimeout(() => window.open(p.getUrl(query), '_blank'), i * 300);
+            });
+        }
+
+        // 更新showError以包含快速搜索
+        const originalShowError = showError;
+        showError = function (message) {
+            originalShowError(message);
+            const query = elements.searchInput.value.trim();
+            if (query) {
+                generateQuickSearchButtons(query);
+            }
+        };
 
         document.addEventListener('DOMContentLoaded', initEventListeners);
         document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown')) document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show')); });
