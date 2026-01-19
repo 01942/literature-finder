@@ -906,8 +906,30 @@
             if (!query) { showError('请输入检索内容'); return; }
             showLoading();
             try {
-                let results = isDOI(query) || currentSearchType === 'doi' ? await searchByDOI(query) : await searchByQuery(query, currentSearchType);
-                results && results.length > 0 ? showResults(results) : showError('未找到相关文献，请尝试其他关键词');
+                let results = [];
+                if (isDOI(query) || currentSearchType === 'doi') {
+                    results = await searchByDOI(query);
+                } else {
+                    // 同时搜索多个数据源
+                    const [crossrefResults, semanticResults] = await Promise.allSettled([
+                        searchCrossRef(query, currentSearchType),
+                        searchSemanticScholar(query)
+                    ]);
+
+                    // 合并结果
+                    if (crossrefResults.status === 'fulfilled') results.push(...crossrefResults.value);
+                    if (semanticResults.status === 'fulfilled') results.push(...semanticResults.value);
+
+                    // 去重（按标题）
+                    const seen = new Set();
+                    results = results.filter(r => {
+                        const key = r.title.toLowerCase().substring(0, 50);
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                }
+                results && results.length > 0 ? showResults(results) : showError('未找到相关文献，请尝试其他关键词或使用下方的直接搜索链接');
             } catch (error) { console.error('Search error:', error); showError('检索失败: ' + (error.message || '网络错误，请稍后重试')); }
         }
 
@@ -921,7 +943,8 @@
             return data.message ? [formatCrossRefResult(data.message)] : [];
         }
 
-        async function searchByQuery(query, searchType) {
+        // CrossRef API 搜索
+        async function searchCrossRef(query, searchType) {
             let url = `${CONFIG.crossrefAPI}?rows=${CONFIG.resultsPerPage}`;
             if (searchType === 'title') url += `&query.title=${encodeURIComponent(query)}`;
             else if (searchType === 'author') url += `&query.author=${encodeURIComponent(query)}`;
@@ -929,6 +952,34 @@
             const response = await fetchWithTimeout(url);
             const data = await response.json();
             return data.message?.items?.map(formatCrossRefResult) || [];
+        }
+
+        // Semantic Scholar API 搜索（更全面，包含更多最新论文）
+        async function searchSemanticScholar(query) {
+            const url = `https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(query)}&limit=10&fields=title,authors,year,venue,externalIds,abstract,citationCount,openAccessPdf`;
+            try {
+                const response = await fetchWithTimeout(url);
+                const data = await response.json();
+                return data.data?.map(formatSemanticResult) || [];
+            } catch (e) {
+                console.log('Semantic Scholar search failed:', e);
+                return [];
+            }
+        }
+
+        function formatSemanticResult(item) {
+            return {
+                title: item.title || 'Untitled',
+                authors: item.authors?.map(a => a.name).slice(0, 5).join('; ') + (item.authors?.length > 5 ? '; et al.' : '') || 'Unknown authors',
+                year: item.year || '',
+                journal: item.venue || '',
+                doi: item.externalIds?.DOI || '',
+                url: item.externalIds?.DOI ? `https://doi.org/${item.externalIds.DOI}` : `https://www.semanticscholar.org/paper/${item.paperId}`,
+                abstract: item.abstract || '',
+                citations: item.citationCount || 0,
+                openAccessUrl: item.openAccessPdf?.url || null,
+                source: 'Semantic Scholar'
+            };
         }
 
         function formatCrossRefResult(item) {
@@ -980,11 +1031,21 @@
             const libgenSearch = result.title ? `${CONFIG.libgenMirrors[0]}/scimag/?q=${encodeURIComponent(result.title)}` : '';
             const scholarUrl = result.title ? `${CONFIG.googleScholar}?q=${encodeURIComponent(result.title)}` : '';
 
-            // 新增：更多下载源
+            // 开放获取源
             const arxivSearch = result.title ? `https://arxiv.org/search/?query=${encodeURIComponent(result.title)}&searchtype=all` : '';
             const pubmedSearch = result.title ? `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(result.title)}` : '';
             const researchgateSearch = result.title ? `https://www.researchgate.net/search/publication?q=${encodeURIComponent(result.title)}` : '';
             const semanticScholarSearch = result.title ? `https://www.semanticscholar.org/search?q=${encodeURIComponent(result.title)}` : '';
+
+            // 新增：主要出版商直接搜索
+            const ieeeSearch = result.title ? `https://ieeexplore.ieee.org/search/searchresult.jsp?queryText=${encodeURIComponent(result.title)}` : '';
+            const mdpiSearch = result.title ? `https://www.mdpi.com/search?q=${encodeURIComponent(result.title)}` : '';
+            const springerSearch = result.title ? `https://link.springer.com/search?query=${encodeURIComponent(result.title)}` : '';
+            const scienceDirectSearch = result.title ? `https://www.sciencedirect.com/search?qs=${encodeURIComponent(result.title)}` : '';
+            const wileySearch = result.title ? `https://onlinelibrary.wiley.com/action/doSearch?AllField=${encodeURIComponent(result.title)}` : '';
+
+            // 如果有开放获取PDF链接（来自Semantic Scholar）
+            const openAccessLink = result.openAccessUrl ? `<a href="${result.openAccessUrl}" target="_blank" rel="noopener" class="dropdown-item">🆓 直接下载 PDF</a>` : '';
 
             return `
         <article class="result-card" style="animation-delay: ${index * 0.05}s">
@@ -994,30 +1055,38 @@
                 ${result.year ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${result.year}</span>` : ''}
                 ${result.journal ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${escapeHtml(truncate(result.journal, 50))}</span>` : ''}
                 ${result.citations > 0 ? `<span class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>${result.citations} 引用</span>` : ''}
+                ${result.source ? `<span class="meta-item" style="color:var(--primary-color)">📌 ${result.source}</span>` : ''}
             </div>
             ${result.abstract ? `<p class="result-abstract">${escapeHtml(result.abstract)}</p>` : ''}
             <div class="result-actions">
                 ${doiUrl ? `<a href="${doiUrl}" target="_blank" rel="noopener" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>DOI原文</a>` : ''}
-                ${result.doi ? `
                 <div class="dropdown">
                     <button class="action-btn primary" onclick="toggleDropdown(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>下载 PDF ▼</button>
                     <div class="dropdown-menu">
-                        <div class="dropdown-section"><div class="dropdown-label">🔓 开放获取（推荐新文献）</div>
-                            <a href="javascript:void(0)" onclick="checkUnpaywall('${result.doi}')" class="dropdown-item">✅ Unpaywall 检查</a>
+                        <div class="dropdown-section"><div class="dropdown-label">🔓 开放获取（推荐）</div>
+                            ${openAccessLink}
+                            ${result.doi ? `<a href="javascript:void(0)" onclick="checkUnpaywall('${result.doi}')" class="dropdown-item">✅ Unpaywall 检查</a>` : ''}
                             <a href="${pubmedSearch}" target="_blank" rel="noopener" class="dropdown-item">🏥 PubMed Central</a>
                             <a href="${arxivSearch}" target="_blank" rel="noopener" class="dropdown-item">📄 arXiv 预印本</a>
                         </div>
                         <div class="dropdown-section"><div class="dropdown-label">🔬 学术社交网络</div>
-                            <a href="${researchgateSearch}" target="_blank" rel="noopener" class="dropdown-item">ResearchGate</a>
+                            <a href="${researchgateSearch}" target="_blank" rel="noopener" class="dropdown-item">ResearchGate（推荐）</a>
                             <a href="${semanticScholarSearch}" target="_blank" rel="noopener" class="dropdown-item">Semantic Scholar</a>
                         </div>
-                        <div class="dropdown-section"><div class="dropdown-label">📚 Sci-Hub（旧文献）</div>${scihubLinks}</div>
+                        <div class="dropdown-section"><div class="dropdown-label">📰 出版商网站</div>
+                            <a href="${ieeeSearch}" target="_blank" rel="noopener" class="dropdown-item">IEEE Xplore</a>
+                            <a href="${mdpiSearch}" target="_blank" rel="noopener" class="dropdown-item">MDPI</a>
+                            <a href="${springerSearch}" target="_blank" rel="noopener" class="dropdown-item">SpringerLink</a>
+                            <a href="${scienceDirectSearch}" target="_blank" rel="noopener" class="dropdown-item">ScienceDirect (Elsevier)</a>
+                            <a href="${wileySearch}" target="_blank" rel="noopener" class="dropdown-item">Wiley Online Library</a>
+                        </div>
+                        ${result.doi ? `<div class="dropdown-section"><div class="dropdown-label">📚 Sci-Hub</div>${scihubLinks}</div>` : ''}
                         <div class="dropdown-section"><div class="dropdown-label">📖 LibGen</div>
                             <a href="${libgenSearch}" target="_blank" rel="noopener" class="dropdown-item">LibGen 搜索</a>
                             <a href="${CONFIG.libgenMirrors[1]}/scimag/?q=${encodeURIComponent(result.title || '')}" target="_blank" rel="noopener" class="dropdown-item">LibGen 镜像 2</a>
                         </div>
                     </div>
-                </div>` : ''}
+                </div>
                 <button class="action-btn" onclick="copyDOI('${result.doi}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制引用</button>
                 <a href="${scholarUrl}" target="_blank" rel="noopener" class="action-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>Google Scholar</a>
             </div>
